@@ -43,12 +43,8 @@ export default {
             const messages = await post.messages.fetch({ before: lastMessage, limit: 100 });
             for (let j = 0; j < messages.size; j++) {
                 const message = messages.at(j);
-                if (message.createdTimestamp < lastMonth) {
-                    const message = messages.at(j - 1);
-                    lastMessage = message.id;
-                    console.log(message.author.username, `(${message.id}):`, message.content);
+                if (message.createdTimestamp < lastMonth)
                     break;
-                };
 
                 if (members.find((user) => user.id === message.author.id))
                     continue;
