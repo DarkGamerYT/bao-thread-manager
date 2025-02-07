@@ -1,4 +1,4 @@
-import { REST, Routes } from "discord.js";
+import { Collection, REST, Routes } from "discord.js";
 import fs from "node:fs";
 import path from "node:path";
 import dotenv from "dotenv";
@@ -6,26 +6,10 @@ dotenv.config();
 
 console.log("Deploying commands...");
 
-const commands = [];
+const commands = new Collection();
 const commandFiles = fs
     .readdirSync("./src/commands")
     .filter((file) => file.endsWith(".js"));
-
-for (const file of commandFiles) {
-    const filePath = path.join(import.meta.url, "../commands/", file);
-    import(filePath).then(({ default: command }) => {
-        if (!("data" in command) || !("execute" in command)) {
-            console.log(
-                `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
-            );
-
-            return;
-        };
-
-        console.log(`[INFO] Loading command ${command.data.name}`);
-        commands.push(command.data.toJSON());
-    });
-}
 
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] })
@@ -34,13 +18,29 @@ rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] })
 
 (async () => {
     try {
+        for (const file of commandFiles) {
+            const filePath = path.join(import.meta.url, "../commands/", file);
+            const { default: command } = await import(filePath);
+
+            if (!("data" in command) || !("execute" in command)) {
+                console.log(
+                    `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+                );
+    
+                continue;
+            };
+    
+            console.log(`[INFO] Loading command ${command.data.name}`);
+            commands.set(command.data.name, command.data.toJSON());
+        };
+
         console.log(
-            `Started refreshing ${commands.length} application (/) commands.`
+            `Started refreshing ${commands.size} application (/) commands.`
         );
-        
+
         const data = await rest.put(
             Routes.applicationCommands(process.env.CLIENT_ID),
-            { body: commands }
+            { body: [ ...commands.values() ] }
         );
 
         console.log(

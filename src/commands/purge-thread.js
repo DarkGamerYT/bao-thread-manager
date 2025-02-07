@@ -19,20 +19,21 @@ export default {
         .addChannelOption((option) =>
             option
                 .setName("thread")
-                .setDescription("Neow")
+                .setDescription("Meow")
                 .addChannelTypes(ChannelType.PublicThread)
                 .setRequired(true)
         ),
 
-    /** @param { Interaction } interaction */
+    /** @param { import("discord.js").Interaction } interaction */
     async execute(interaction) {
-        return;
-
-        const forum = client.channels.cache.get(channelId);
         /** @type { import("discord.js").ThreadChannel } */
-        const post = forum.threads.cache.get(threadId);
-
-        console.log(post);
+        const post = interaction.options.getChannel("thread");
+        if (post === void 0 || post.type !== ChannelType.ThreadChannel) {
+            await interaction.reply({ content: "Channel is not a thread or does not exist.", ephemeral: true });
+            return;
+        };
+        
+        await interaction.reply({ content: "Purging the thread. ".concat(post.toString()) });
         const lastMonth = getLastMonth();
 
         /** @type { import("discord.js").User[] } */
@@ -63,9 +64,12 @@ export default {
                 break;
 
             lastMessage = message.id;
-            console.log(message.author.username, `(${message.id}):`, message.content);
         };
+
         console.log(`(${members.length})`, members.map((user) => user.username));
+        await interaction.editReply({
+            content: `\`${members.length}\` members have sent at least one message in the last month.`
+        });
         
         const postMembers = await post.members.fetch({ withMember: true });
         await post.setLocked(true, "Purging members");
@@ -88,5 +92,8 @@ export default {
 
         console.log("Done purging!");
         await post.setLocked(false, "Purging members");
+        await interaction.editReply({
+            content: `Done purging!\n\`${members.length}\` members have sent at least one message in the last month.`
+        });
     },
 };
