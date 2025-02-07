@@ -1,0 +1,14 @@
+{
+    "name": "bao-thread-manager",
+    "description": "",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "node src",
+        "deploy": "node src/deploy"
+    },
+    "dependencies": {
+        "discord.js": "^14.14.1",
+        "dotenv": "^16.4.7"
+    }
+}
