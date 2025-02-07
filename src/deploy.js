@@ -4,31 +4,34 @@ import path from "node:path";
 import dotenv from "dotenv";
 dotenv.config();
 
-console.log('Deploying commands...');
+console.log("Deploying commands...");
 
 const commands = [];
-const foldersPath = path.join(__dirname, 'src/commands');
 const commandFiles = fs
-    .readdirSync(foldersPath)
-    .filter((file) => file.endsWith('.js'));
+    .readdirSync("./src/commands")
+    .filter((file) => file.endsWith(".js"));
 
 for (const file of commandFiles) {
-    const filePath = path.join(foldersPath, file);
-    const command = require(filePath);
-    if ('data' in command && 'execute' in command) {
+    const filePath = path.join(import.meta.url, "../commands/", file);
+    import(filePath).then(({ default: command }) => {
+        if (!("data" in command) || !("execute" in command)) {
+            console.log(
+                `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+            );
+
+            return;
+        };
+
         console.log(`[INFO] Loading command ${command.data.name}`);
         commands.push(command.data.toJSON());
-    } else {
-        console.log(
-            `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
-        );
-    }
+    });
 }
 
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
-rest.put(Routes.applicationCommands(process.env.CLIENT_TOKEN), { body: [] })
-    .then(() => console.log('Successfully deleted all application commands.'))
+rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] })
+    .then(() => console.log("Successfully deleted all application commands."))
     .catch(console.error);
+
 (async () => {
     try {
         console.log(
@@ -36,7 +39,7 @@ rest.put(Routes.applicationCommands(process.env.CLIENT_TOKEN), { body: [] })
         );
         
         const data = await rest.put(
-            Routes.applicationCommands(process.env.CLIENT_TOKEN),
+            Routes.applicationCommands(process.env.CLIENT_ID),
             { body: commands }
         );
 

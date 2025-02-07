@@ -12,13 +12,14 @@ function getLastMonth() {
     return date.getTime();
 };
 
-module.exports = {
+export default {
     data: new SlashCommandBuilder()
         .setName("remove-inactive-members")
         .setDescription("Remove inactive members from thread")
         .addChannelOption((option) =>
             option
                 .setName("thread")
+                .setDescription("Neow")
                 .addChannelTypes(ChannelType.PublicThread)
                 .setRequired(true)
         ),
@@ -86,6 +87,6 @@ module.exports = {
         };
 
         console.log("Done purging!");
-        await post.setLocked(false, "Purging members");*/
+        await post.setLocked(false, "Purging members");
     },
 };
