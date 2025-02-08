@@ -76,10 +76,8 @@ export default {
             if (member === void 0)
                 break;
             
-            if (members.find((user) => user.id === member.id) !== undefined) {
-                i--;
+            if (members.find((user) => user.id === member.id) !== undefined)
                 continue;
-            };
 
             try {
                 await post.members.remove(member.id, "Purging members");
