@@ -1,4 +1,9 @@
-import { ChannelType, SlashCommandBuilder } from "discord.js";
+import {
+    ChannelType,
+    PermissionFlagsBits,
+    InteractionContextType,
+    SlashCommandBuilder
+} from "discord.js";
 
 function getLastMonth() {
     const date = new Date();
@@ -16,6 +21,8 @@ export default {
     data: new SlashCommandBuilder()
         .setName("remove-inactive-members")
         .setDescription("Remove inactive members from thread")
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageThreads)
+        .setContexts(InteractionContextType.Guild)
         .addChannelOption((option) =>
             option
                 .setName("thread")
