@@ -94,8 +94,8 @@ export default {
             };
 
             // Sleep to hopefully avoid any ratelimits
-            if (amount % 75 == 0)
-                await new Promise((resolve) => setTimeout(resolve, 1 * 60 * 1000));
+            if (amount % 100 == 0)
+                await new Promise((resolve) => setTimeout(resolve, 30 * 1000));
         };
 
         console.log("Done purging!");
