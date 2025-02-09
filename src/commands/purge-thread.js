@@ -33,18 +33,18 @@ export default {
         await post.setLocked(true, "Purging members");
 
         const members = await getLastMonthMembers(post);
+        const postMembers = await getMembers(post);
         console.log(`(${members.length})`, members.map((user) => user.username));
 
-        const postMembers = await getMembers(post);
-        const membersToRemove = postMembers.filter((member) =>
-            members.find((user) => user.id == member.id) === void 0);
-
+        const membersToRemove = postMembers.filter((user) =>
+            members.find((member) => user.id === member.id) === void 0);
+        
         await interaction.editReply({
             content: `Starting the purge...\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
         });
 
         let amount = 0;
-        for (let i = 0; i < membersToRemove.size; i++) {
+        for (let i = 0; i < membersToRemove.length; i++) {
             const member = membersToRemove.at(i);
             if (member === void 0)
                 continue;
@@ -54,7 +54,7 @@ export default {
                 amount++;
 
                 await interaction.editReply({
-                    content: `Purging \`${amount}/${membersToRemove.size}\`\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
+                    content: `Purging \`${amount}/${membersToRemove.length}\`\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
                 });
             } catch {
                 console.log("Failed to remove", member);
@@ -63,7 +63,7 @@ export default {
             // Sleep to hopefully avoid any ratelimits
             if (amount % 100 == 0) {
                 await interaction.editReply({
-                    content: `On cooldown. Purged \`${amount}/${membersToRemove.size}\` members so far\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
+                    content: `On cooldown. Purged \`${amount}/${membersToRemove.length}\` members so far\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
                 });
                 
                 await new Promise((resolve) => setTimeout(resolve, 30 * 1000));
