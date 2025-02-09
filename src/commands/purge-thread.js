@@ -4,18 +4,7 @@ import {
     InteractionContextType,
     SlashCommandBuilder
 } from "discord.js";
-
-function getLastMonth() {
-    const date = new Date();
-    const month = date.getMonth();
-
-    date.setMonth(date.getMonth() - 1);
-    if (date.getMonth() == month)
-        date.setDate(0);
-    
-    date.setHours(0, 0, 0, 0);
-    return date.getTime();
-};
+import { getLastMonthMembers, getMembers } from "../util.js";
 
 export default {
     data: new SlashCommandBuilder()
@@ -40,68 +29,51 @@ export default {
             return;
         };
         
-        await interaction.reply({ content: "Purging the thread. ".concat(post.toString()) });
-        const lastMonth = getLastMonth();
-
-        /** @type { import("discord.js").User[] } */
-        const members = [];
-        let lastMessage;
-        for (let i = 0; i < post.totalMessageSent; i++) {
-            const messages = await post.messages.fetch({ before: lastMessage, limit: 100 });
-            for (let j = 0; j < messages.size; j++) {
-                const message = messages.at(j);
-                if (message.createdTimestamp < lastMonth)
-                    break;
-
-                if (members.find((user) => user.id === message.author.id))
-                    continue;
-
-                members.push(message.author);
-            };
-            
-            const message = messages.at(messages.size - 1);
-            if (message === void 0)
-                continue;
-
-            if (message.createdTimestamp < lastMonth)
-                break;
-
-            lastMessage = message.id;
-        };
-
-        console.log(`(${members.length})`, members.map((user) => user.username));
-        const postMembers = await post.members.fetch({ withMember: true });
-        await interaction.editReply({
-            content: `\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
-        });
-
+        await interaction.reply({ content: `Found the thread: ${post.toString()}! Fetching all user messages sent in the last month. Please hold.` });
         await post.setLocked(true, "Purging members");
 
+        const members = await getLastMonthMembers(post);
+        console.log(`(${members.length})`, members.map((user) => user.username));
+
+        const postMembers = await getMembers(post);
+        const membersToRemove = postMembers.filter((member) =>
+            members.find((user) => user.id == member.id) === void 0);
+
+        await interaction.editReply({
+            content: `Starting the purge...\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
+        });
+
         let amount = 0;
-        for (let i = 0; i < postMembers.size; i++) {
-            const member = postMembers.at(i);
+        for (let i = 0; i < membersToRemove.size; i++) {
+            const member = membersToRemove.at(i);
             if (member === void 0)
-                break;
-            
-            if (members.find((user) => user.id === member.id) !== undefined)
                 continue;
 
             try {
                 await post.members.remove(member.id, "Purging members");
                 amount++;
+
+                await interaction.editReply({
+                    content: `Purging \`${amount}/${membersToRemove.size}\`\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
+                });
             } catch {
                 console.log("Failed to remove", member);
             };
 
             // Sleep to hopefully avoid any ratelimits
-            if (amount % 100 == 0)
+            if (amount % 100 == 0) {
+                await interaction.editReply({
+                    content: `On cooldown. Purged \`${amount}/${membersToRemove.size}\` members so far\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
+                });
+                
                 await new Promise((resolve) => setTimeout(resolve, 30 * 1000));
+            };
         };
 
         console.log("Done purging!");
         await post.setLocked(false, "Purging members");
         await interaction.editReply({
-            content: `\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.\nDone purging! Removed \`${amount}\` member(s).`
+            content: `Purging done! Removed \`${amount}\` member(s).`
         });
     },
 };
