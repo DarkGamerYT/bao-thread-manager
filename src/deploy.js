@@ -19,8 +19,9 @@ rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] })
 (async () => {
     try {
         for (const file of commandFiles) {
-            const filePath = path.join(import.meta.url, "../commands/", file);
-            const { default: command } = await import(filePath);
+            const command = (await import(
+                "./commands/".concat(file)
+            )).default;
 
             if (!("data" in command) || !("execute" in command)) {
                 console.log(
@@ -48,5 +49,5 @@ rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] })
         );
     } catch (error) {
         console.error(error);
-    }
+    };
 })();

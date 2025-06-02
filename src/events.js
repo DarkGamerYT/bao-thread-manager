@@ -9,8 +9,9 @@ export default function (client) {
         .filter((file) => file.endsWith(".js"));
 
     for (const file of eventFiles) {
-        const filePath = path.join(import.meta.url, "../events/", file);
-        import(filePath).then(({ default: event }) => {
+        import(
+            "./events/".concat(file)
+        ).then(({ default: event }) => {
             if (event.once) {
                 client.once(event.name, (...args) => event.execute(...args));
             }

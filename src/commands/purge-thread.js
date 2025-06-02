@@ -36,8 +36,19 @@ export default {
         const postMembers = await getMembers(post);
         console.log(`(${members.length})`, members.map((user) => user.username));
 
-        const membersToRemove = postMembers.filter((user) =>
-            members.find((member) => user.id === member.id) === void 0);
+        const roles = [
+            "1065713026369593434", // Mod
+            "872417164899020901"   // Mojangster
+        ];
+        
+        const membersToRemove = postMembers
+            .filter((user) => user.id !== interaction.client.id)
+            .filter((user) =>
+                user.guildMember.roles.cache.find((role, key) => roles.includes(key)) == void 0
+            )
+            .filter((user) =>
+                members.find((member) => user.id === member.id) === void 0
+            );
         
         await interaction.editReply({
             content: `Starting the purge...\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
@@ -52,19 +63,30 @@ export default {
             try {
                 await post.members.remove(member.id, "Purging members");
                 amount++;
-
+            }
+            catch {
+                console.log("Failed to remove", member.user.username, `<${member.user.id}>`);
+            };
+            
+            try {
                 await interaction.editReply({
                     content: `Purging \`${amount}/${membersToRemove.length}\`\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
                 });
-            } catch {
-                console.log("Failed to remove", member);
+            }
+            catch {
+                console.log(`Purging \`${amount}/${membersToRemove.length}, but failed to update the message.`);
             };
 
             // Sleep to hopefully avoid any ratelimits
-            if (amount % 100 == 0) {
-                await interaction.editReply({
-                    content: `On cooldown. Purged \`${amount}/${membersToRemove.length}\` members so far\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
-                });
+            if (amount % 50 == 0) {
+                try {
+                    await interaction.editReply({
+                        content: `On cooldown. Purged \`${amount}/${membersToRemove.length}\` members so far\n\n\`${members.length}\` member(s) have sent at least one message in the last month in ${post.toString()}.`
+                    });
+                }
+                catch {
+                    console.log(`Purged \`${amount}/${membersToRemove.length}, but failed to update the message.`);
+                };
                 
                 await new Promise((resolve) => setTimeout(resolve, 30 * 1000));
             };

@@ -10,8 +10,9 @@ export default function (client) {
         .filter((file) => file.endsWith(".js"));
 
     for (const file of commandFiles) {
-        const filePath = path.join(import.meta.url, "../commands/", file);
-        import(filePath).then(({ default: command }) => {
+        import(
+            "./commands/".concat(file)
+        ).then(({ default: command }) => {
             if (!("data" in command) || !("execute" in command)) {
                 console.warn(
                     `The command at ${filePath} is missing a required "data" or "execute" property.`
